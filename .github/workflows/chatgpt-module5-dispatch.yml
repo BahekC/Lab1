@@ -13,7 +13,7 @@ env:
 
 jobs:
   generate:
-    if: github.event.issue.title == '[chatgpt-module5-docx-20260724] generate'
+    if: github.event.issue.title == '[chatgpt-module5-docx-20260724] aliases'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout artifact branch
@@ -33,11 +33,36 @@ jobs:
       - name: Generate and validate documents
         run: python chatgpt_module5/generate_module5.py
 
+      - name: Create ASCII download aliases and index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          from urllib.parse import quote
+
+          src = sorted(Path('chatgpt_module5/output').glob('*.docx'))
+          if len(src) != 8:
+              raise SystemExit(f'Expected 8 DOCX files, found {len(src)}')
+
+          dst = Path('chatgpt_module5/download')
+          dst.mkdir(parents=True, exist_ok=True)
+          links = []
+          branch = 'chatgpt-docx-module5-20260724'
+          for i, p in enumerate(src, 1):
+              alias = dst / f'module5_work_{i:02d}.docx'
+              shutil.copy2(p, alias)
+              raw = f'https://raw.githubusercontent.com/BahekC/Lab1/{branch}/{alias.as_posix()}'
+              links.append(f'<li><a href="{raw}">module5_work_{i:02d}.docx</a></li>')
+
+          html = '<!doctype html><html><head><meta charset="utf-8"><title>Module 5 DOCX</title></head><body><h1>Module 5 DOCX</h1><ol>' + ''.join(links) + '</ol></body></html>'
+          (dst / 'index.html').write_text(html, encoding='utf-8')
+          PY
+
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
         with:
           name: module5-practical-works
-          path: chatgpt_module5/output/*.docx
+          path: chatgpt_module5/download/*.docx
           if-no-files-found: error
           retention-days: 3
 
@@ -45,11 +70,15 @@ jobs:
         run: |
           git config user.name 'chatgpt-artifact-bot'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add chatgpt_module5/output
-          git commit -m 'Generate module 5 practical-work DOCX files'
-          git push origin HEAD:chatgpt-docx-module5-20260724
+          git add chatgpt_module5/output chatgpt_module5/download
+          if git diff --cached --quiet; then
+            echo 'No generated changes to commit.'
+          else
+            git commit -m 'Add Module 5 DOCX download aliases'
+            git push origin HEAD:chatgpt-docx-module5-20260724
+          fi
 
       - name: Close trigger issue
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --comment "Module 5 DOCX generation completed."
+        run: gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --comment "Module 5 DOCX aliases created."
