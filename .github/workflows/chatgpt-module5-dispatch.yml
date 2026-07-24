@@ -1,4 +1,4 @@
-name: Temporary Module 5 DOCX Artifact
+name: Temporary Module 5 DOCX Packages
 
 on:
   issues:
@@ -8,12 +8,9 @@ permissions:
   contents: read
   issues: write
 
-env:
-  PYTHONUTF8: '1'
-
 jobs:
   package:
-    if: github.event.issue.title == '[chatgpt-module5-docx-20260724] artifact'
+    if: github.event.issue.title == '[chatgpt-module5-docx-20260724] package-docx'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout artifact branch
@@ -21,16 +18,87 @@ jobs:
         with:
           ref: chatgpt-docx-module5-20260724
 
-      - name: Validate expected files
+      - name: Unpack DOCX packages
         run: |
-          test "$(find chatgpt_module5/download -maxdepth 1 -name 'module5_work_*.docx' | wc -l)" -eq 8
+          set -euo pipefail
+          mkdir -p chatgpt_module5/packages
+          for i in 01 02 03 04 05 06 07 08; do
+            mkdir -p "chatgpt_module5/packages/work${i}"
+            unzip -q "chatgpt_module5/download/module5_work_${i}.docx" -d "chatgpt_module5/packages/work${i}"
+            test -f "chatgpt_module5/packages/work${i}/[Content_Types].xml"
+            test -f "chatgpt_module5/packages/work${i}/word/document.xml"
+          done
 
-      - name: Upload artifact
+      - name: Upload work 01 package
         uses: actions/upload-artifact@v4
         with:
-          name: module5-practical-works
-          path: chatgpt_module5/download/module5_work_*.docx
+          name: module5-work-01-package
+          path: chatgpt_module5/packages/work01/
           if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+      - name: Upload work 02 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-work-02-package
+          path: chatgpt_module5/packages/work02/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+      - name: Upload work 03 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-work-03-package
+          path: chatgpt_module5/packages/work03/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+      - name: Upload work 04 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-work-04-package
+          path: chatgpt_module5/packages/work04/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+      - name: Upload work 05 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-work-05-package
+          path: chatgpt_module5/packages/work05/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+      - name: Upload work 06 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-work-06-package
+          path: chatgpt_module5/packages/work06/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+      - name: Upload work 07 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-work-07-package
+          path: chatgpt_module5/packages/work07/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 3
+
+      - name: Upload work 08 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: module5-work-08-package
+          path: chatgpt_module5/packages/work08/
+          if-no-files-found: error
+          include-hidden-files: true
           retention-days: 3
 
       - name: Publish run identifier
@@ -38,4 +106,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh issue comment "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --body "RUN_ID=${{ github.run_id }}"
-          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --comment "Artifact package created."
+          gh issue close "${{ github.event.issue.number }}" --repo "${{ github.repository }}" --comment "Eight DOCX-compatible packages created."
